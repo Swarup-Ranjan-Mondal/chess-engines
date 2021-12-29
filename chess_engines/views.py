@@ -1,56 +1,62 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-import chess
 import chess.engine
+import chess
 
 engines = {
     'stockfish': chess.engine.SimpleEngine.popen_uci(
-        "engines/stockfish_13/stockfish"
+        'engines/stockfish_13/stockfish'
     ),
     'komodo': chess.engine.SimpleEngine.popen_uci(
-        "engines/komodo_12/komodo"
+        'engines/komodo_12/komodo'
     ),
 }
 
 
 @api_view(['POST'])
 def engineResponse(request):
-    if 'fen' in request.data:
-        board = chess.Board(request.data['fen'])
+    try:
+        board = chess.Board(str(request.data['fen']))
+        engine_name = str(request.data['engine_name'])
+        result = engines[engine_name].play(
+            board,
+            chess.engine.Limit(time=0.1),
+        )
 
-        if 'engine_name' in request.data:
-            result = engines[request.data['engine_name']].play(
-                board,
-                chess.engine.Limit(time=0.1),
-            )
-            response = {
-                str(result.move):
-                board.san(chess.Move.from_uci(str(result.move)))
-            }
-
-            return Response(
-                {
-                    "success": True,
-                    "engine_move": response,
-                },
-                status=status.HTTP_200_OK
-            )
-
-        else:
-            return Response(
-                {
-                    "error": True,
-                    "message": "'engine_name' key not found!"
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-    else:
         return Response(
             {
-                "error": True,
-                "message": "'fen' key not found!"
+                'success': True,
+                'engine_move': {
+                    str(result.move):
+                    board.san(chess.Move.from_uci(str(result.move)))
+                },
+            },
+            status=status.HTTP_200_OK
+        )
+
+    except KeyError as ke:
+        response = {'error': True}
+
+        if 'fen' in str(ke) or 'engine_name' in str(ke):
+            response['message'] = f"key {ke} is missing!"
+        elif engine_name in str(ke):
+            response['message'] = "chess engine name error!"
+            response['description'] = f"no chess engine exists with the name: {ke}"
+        else:
+            response['message'] = str(ke)
+
+        return Response(
+            response,
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    except ValueError as ve:
+        return Response(
+            {
+                'error': True,
+                'message': "fen is syntactically invalid!",
+                'description': str(ve)
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
