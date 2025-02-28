@@ -4,6 +4,14 @@ This is a **Dockerized App** built with [**Django**](https://www.djangoproject.c
 
 It is backend service which returns a good move from a chess engine based on the board position. Currently, it has only two chess engines, **_Stockfish_** and **_Komodo_**.
 
+## Build
+
+To build the image of this microservice app, run the following command:
+
+```sh
+$ docker build --platform linux/amd64 -t chess-engines .
+```
+
 ## Usage
 
 The **_Docker image_** of the app is available on [**Docker Hub**](https://hub.docker.com/) and can be seen from [**here**](https://hub.docker.com/r/swarupranjanmondal/chess-engines).
